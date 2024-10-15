@@ -1,0 +1,163 @@
+import tkinter as tk
+from tkinter import messagebox
+import random
+import heapq
+import time
+
+class EightPuzzle:
+    def __init__(self, master):
+        self.master = master
+        master.title("8-Puzzle")
+
+        self.board = [[0, 0, 0],
+                     [0, 0, 0],
+                     [0, 0, 0]]
+        self.empty_row = 0
+        self.empty_col = 0
+
+        self.create_buttons()
+        self.shuffle_board()
+
+        # Add a button to solve the puzzle using A* algorithm
+        self.solve_button = tk.Button(master, text="Solve", command=self.solve_puzzle)
+        self.solve_button.grid(row=3, column=0, columnspan=3)
+
+    def create_buttons(self):
+        self.buttons = []
+        for i in range(3):
+            row = []
+            for j in range(3):
+                button = tk.Button(self.master, text="", width=5, height=2,
+                                  command=lambda row=i, col=j: self.move_tile(row, col))
+                button.grid(row=i, column=j)
+                row.append(button)
+            self.buttons.append(row)
+
+    def shuffle_board(self):
+        numbers = list(range(9))  # Include 0 for the empty space
+        random.shuffle(numbers)
+        while not self.is_solvable(numbers):
+            random.shuffle(numbers)
+        k = 0
+        for i in range(3):
+            for j in range(3):
+                self.board[i][j] = numbers[k]
+                if numbers[k] == 0:
+                    self.empty_row = i
+                    self.empty_col = j
+                k += 1
+        self.update_buttons()
+
+    def move_tile(self, row, col):
+        if abs(row - self.empty_row) + abs(col - self.empty_col) == 1:
+            self.board[self.empty_row][self.empty_col] = self.board[row][col]
+            self.board[row][col] = 0
+            self.empty_row = row
+            self.empty_col = col
+            self.update_buttons()
+            if self.check_win():
+                messagebox.showinfo("Congratulations!", "You solved the puzzle!")
+
+    def update_buttons(self):
+        for i in range(3):
+            for j in range(3):
+                if self.board[i][j] == 0:
+                    self.buttons[i][j].config(text="")
+                else:
+                    self.buttons[i][j].config(text=str(self.board[i][j]))
+
+    def check_win(self):
+        win_board = [[1, 2, 3],
+                     [4, 5, 6],
+                     [7, 8, 0]]
+        return self.board == win_board
+
+    def is_solvable(self, numbers):
+        inversions = 0
+        for i in range(len(numbers)):
+            for j in range(i + 1, len(numbers)):
+                if numbers[i] > numbers[j] != 0:
+                    inversions += 1
+        return inversions % 2 == 0
+
+    def heuristic(self, board):
+        distance = 0
+        for i in range(3):
+            for j in range(3):
+                value = board[i][j]
+                if value != 0:
+                    target_x = (value - 1) // 3
+                    target_y = (value - 1) % 3
+                    distance += abs(i - target_x) + abs(j - target_y)
+        return distance
+
+    def solve_puzzle(self):
+        # A* algorithm implementation
+        initial_state = (self.board, self.empty_row, self.empty_col)
+        open_set = []
+        heapq.heappush(open_set, (self.heuristic(self.board), initial_state))
+        came_from = {}
+        g_score = {str(self.board): 0}
+        f_score = {str(self.board): self.heuristic(self.board)}
+
+        while open_set:
+            current = heapq.heappop(open_set)[1]
+            current_board, empty_row, empty_col = current
+            
+            # Check if the current state is the goal state
+            if self.check_win_state(current_board):
+                path = self.reconstruct_path(came_from, current_board)
+                self.animate_solution(path)
+                return
+            
+            for neighbor in self.get_neighbors(empty_row, empty_col):
+                neighbor_board = self.make_move(current_board, empty_row, empty_col, neighbor[0], neighbor[1])
+                neighbor_str = str(neighbor_board)
+                tentative_g_score = g_score[str(current_board)] + 1
+
+                if neighbor_str not in g_score or tentative_g_score < g_score[neighbor_str]:
+                    came_from[neighbor_str] = current_board
+                    g_score[neighbor_str] = tentative_g_score
+                    f_score[neighbor_str] = tentative_g_score + self.heuristic(neighbor_board)
+                    if (f_score[neighbor_str], (neighbor_board, neighbor[0], neighbor[1])) not in open_set:
+                        heapq.heappush(open_set, (f_score[neighbor_str], (neighbor_board, neighbor[0], neighbor[1])))
+
+    def check_win_state(self, board):
+        win_board = [[1, 2, 3],
+                     [4, 5, 6],
+                     [7, 8, 0]]
+        return board == win_board
+
+    def get_neighbors(self, row, col):
+        neighbors = []
+        directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]  # Up, Down, Left, Right
+        for d in directions:
+            new_row, new_col = row + d[0], col + d[1]
+            if 0 <= new_row < 3 and 0 <= new_col < 3:
+                neighbors.append((new_row, new_col))
+        return neighbors
+
+    def make_move(self, board, empty_row, empty_col, row, col):
+        new_board = [row[:] for row in board]
+        new_board[empty_row][empty_col], new_board[row][col] = new_board[row][col], new_board[empty_row][empty_col]
+        return new_board
+
+    def reconstruct_path(self, came_from, current_board):
+        path = []
+        while current_board in came_from:
+            path.append(current_board)
+            current_board = came_from[current_board]
+        path.reverse()
+        return path
+
+    def animate_solution(self, path):
+        for board in path:
+            self.board = board
+            self.update_buttons()
+            self.master.after(500)  # Delay for 500ms after each move
+            self.master.update()
+            time.sleep(0.5)  # Sleep for additional time to visualize the moves
+
+root = tk.Tk()
+puzzle = EightPuzzle(root)
+root.mainloop()

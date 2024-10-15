@@ -1,0 +1,46 @@
+The logic and algorithms used in the provided Tic Tac Toe game code:
+
+Game Logic Initialization (create_board()):
+Initializes a 3x3 NumPy array filled with zeros to represent the game board.
+
+Checking for a Winner (check_winner(board, player)):
+Iterates through rows and columns to check if any row, column, or diagonal is completely occupied by the player's moves (player is either 1 or 2).
+Uses NumPy functions to efficiently check rows (np.all(board[i, :] == player)), columns (np.all(board[:, i] == player)), and diagonals (np.all(np.diag(board) == player) and np.all(np.diag(np.fliplr(board)) == player)).
+
+Game Evaluation (evaluate(board)):
+Checks if either player 1 or player 2 has won using check_winner(board, player).
+Returns the player number (1 or 2) if there is a winner, -1 if the game is a draw (board is full), or 0 if the game is ongoing.
+
+Possible Moves (possibilities(board)):
+Returns a list of tuples representing the coordinates where the board contains zeros (indicating empty spaces).
+
+Random Move by Computer (random_place(board, player)):
+Chooses a random empty space on the board (possibilities(board)) and places the player's move (player is 1 for the human player, 2 for the computer).
+
+GUI Implementation (TicTacToeGUI class):
+Uses customtkinter for GUI elements (buttons, labels, option menu).
+Initializes game-specific attributes such as player names, victory messages, and images for each player's moves and victory conditions.
+
+Game Flow (make_move(row, col) and computer_move()):
+
+Handles player moves (make_move):
+Updates the board with the player's move.
+Disables the button corresponding to the move.
+Plays a sound (X.mp3 or O.mp3) depending on the player.
+Checks for a winner after each move and switches turns.
+
+Handles computer moves (computer_move):
+If playing against the computer (self.play_with_computer), initiates a move for player 2 (computer).
+Updates the board and disables the corresponding button.
+Plays a sound for the computer's move.
+Checks for a winner or a draw condition after the move.
+
+Game Outcome Display (show_winner(winner)):
+Disables all buttons once the game ends.
+Displays a message box with the game outcome (balanced environmental impact for a draw) or creates a new window (Toplevel) to display the winner's message and image.
+Resets the game board and current player after displaying the outcome.
+Game Initialization and Main Loop (if __name__ == "__main__":):
+
+Initializes the customtkinter application (root) and starts the main event loop (root.mainloop()).
+Creates an instance of TicTacToeGUI to start the game.
+Overall, the code combines backend game logic using NumPy for board operations with a frontend GUI using customtkinter, offering a playable Tic Tac Toe game with options for human vs. human or human vs. computer gameplay.
